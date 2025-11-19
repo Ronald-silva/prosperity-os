@@ -9,6 +9,7 @@ import { TransactionDialog } from "@/components/TransactionDialog";
 import { BillCard } from "@/components/BillCard";
 import { PiggyCard } from "@/components/PiggyCard";
 import { MentorCard } from "@/components/MentorCard";
+import { BillDialog } from "@/components/BillDialog";
 
 interface Profile {
   survival_mode: boolean;
@@ -45,12 +46,20 @@ const MENTOR_MESSAGES = [
   }
 ];
 
+interface Transaction {
+  id: string;
+  type: string;
+  value: number;
+  date: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bills, setBills] = useState<Bill[]>([]);
   const [piggies, setPiggies] = useState<Piggy[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -69,20 +78,72 @@ const Dashboard = () => {
 
   const loadData = async (userId: string) => {
     try {
-      const [profileRes, billsRes, piggiesRes] = await Promise.all([
+      const [profileRes, billsRes, piggiesRes, transactionsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).single(),
         supabase.from("bills").select("*").eq("user_id", userId).order("due_day"),
         supabase.from("piggies").select("*").eq("user_id", userId).order("priority"),
+        supabase.from("transactions").select("*").eq("user_id", userId).order("date", { ascending: false }),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
       if (billsRes.data) setBills(billsRes.data);
       if (piggiesRes.data) setPiggies(piggiesRes.data);
+      if (transactionsRes.data) setTransactions(transactionsRes.data);
     } catch (error: any) {
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calcular saldo total
+  const calculateBalance = () => {
+    return transactions.reduce((acc, t) => {
+      return t.type === "gain" ? acc + t.value : acc - t.value;
+    }, 0);
+  };
+
+  // Calcular contas pendentes dos próximos 7 dias
+  const getUpcomingBills = () => {
+    const today = new Date();
+    const currentDay = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    
+    return bills.filter(bill => {
+      if (bill.paid) return false;
+      
+      const dueDay = bill.due_day;
+      let daysUntilDue = dueDay - currentDay;
+      
+      // Se a conta é de um dia anterior no mês, considerar o próximo mês
+      if (daysUntilDue < 0) {
+        daysUntilDue = daysInMonth - currentDay + dueDay;
+      }
+      
+      return daysUntilDue <= 7 && daysUntilDue >= 0;
+    });
+  };
+
+  // Calcular total de contas pendentes
+  const getTotalUnpaidBills = () => {
+    return bills.filter(b => !b.paid).reduce((acc, b) => acc + b.value, 0);
+  };
+
+  // Calcular orçamento diário
+  const calculateDailyBudget = () => {
+    const balance = calculateBalance();
+    const unpaidBills = getTotalUnpaidBills();
+    const availableMoney = balance - unpaidBills;
+    
+    // Assume próximo pagamento em 30 dias (pode ser configurável depois)
+    const daysUntilPayment = 30;
+    
+    return availableMoney / daysUntilPayment;
+  };
+
+  // Calcular dias até próximo pagamento (placeholder - pode ser melhorado)
+  const getDaysUntilPayment = () => {
+    return 30; // Placeholder - pode adicionar configuração depois
   };
 
   const handleLogout = async () => {
@@ -115,8 +176,10 @@ const Dashboard = () => {
     );
   }
 
-  const dailyBudget = 50; // Placeholder - será calculado dinamicamente
-  const daysUntilPayment = 15; // Placeholder
+  const balance = calculateBalance();
+  const dailyBudget = calculateDailyBudget();
+  const daysUntilPayment = getDaysUntilPayment();
+  const upcomingBills = getUpcomingBills();
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,6 +216,20 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <section>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="bg-card p-4 rounded-lg border">
+              <p className="text-sm text-muted-foreground">Saldo Total</p>
+              <p className="text-3xl font-bold text-primary">R$ {balance.toFixed(2)}</p>
+            </div>
+            <div className="bg-card p-4 rounded-lg border">
+              <p className="text-sm text-muted-foreground">Contas Pendentes</p>
+              <p className="text-3xl font-bold text-warning">R$ {getTotalUnpaidBills().toFixed(2)}</p>
+            </div>
+            <div className="bg-card p-4 rounded-lg border">
+              <p className="text-sm text-muted-foreground">Disponível</p>
+              <p className="text-3xl font-bold text-success">R$ {(balance - getTotalUnpaidBills()).toFixed(2)}</p>
+            </div>
+          </div>
           <SurvivalBadge dailyBudget={dailyBudget} daysUntilPayment={daysUntilPayment} />
         </section>
 
@@ -165,14 +242,17 @@ const Dashboard = () => {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-4">Contas dos Próximos 7 Dias</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Contas dos Próximos 7 Dias</h2>
+            <BillDialog onSuccess={() => loadData(user!.id)} />
+          </div>
           <div className="space-y-3">
-            {bills.length === 0 ? (
+            {upcomingBills.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                Nenhuma conta cadastrada ainda
+                Nenhuma conta nos próximos 7 dias
               </p>
             ) : (
-              bills.map((bill) => (
+              upcomingBills.map((bill) => (
                 <BillCard
                   key={bill.id}
                   {...bill}
