@@ -10,6 +10,8 @@ import { BillCard } from "@/components/BillCard";
 import { PiggyCard } from "@/components/PiggyCard";
 import { MentorCard } from "@/components/MentorCard";
 import { BillDialog } from "@/components/BillDialog";
+import { PiggyDialog } from "@/components/PiggyDialog";
+import { SpendingChart } from "@/components/SpendingChart";
 
 interface Profile {
   survival_mode: boolean;
@@ -51,6 +53,8 @@ interface Transaction {
   type: string;
   value: number;
   date: string;
+  category: string;
+  description: string;
 }
 
 const Dashboard = () => {
@@ -101,6 +105,18 @@ const Dashboard = () => {
     return transactions.reduce((acc, t) => {
       return t.type === "gain" ? acc + t.value : acc - t.value;
     }, 0);
+  };
+
+  const calculateIncome = () => {
+    return transactions
+      .filter((t) => t.type === "gain")
+      .reduce((acc, t) => acc + t.value, 0);
+  };
+
+  const calculateExpenses = () => {
+    return transactions
+      .filter((t) => t.type === "spend")
+      .reduce((acc, t) => acc + t.value, 0);
   };
 
   // Calcular contas pendentes dos próximos 7 dias
@@ -177,15 +193,17 @@ const Dashboard = () => {
   }
 
   const balance = calculateBalance();
+  const totalIncome = calculateIncome();
+  const totalExpenses = calculateExpenses();
   const dailyBudget = calculateDailyBudget();
   const daysUntilPayment = getDaysUntilPayment();
   const upcomingBills = getUpcomingBills();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+    <div className="min-h-screen bg-background pb-20 md:pb-8">
+      <header className="border-b bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+          <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             Prosperity OS
           </h1>
           <div className="flex items-center gap-2">
@@ -193,6 +211,7 @@ const Dashboard = () => {
               variant={profile?.survival_mode ? "destructive" : "outline"}
               size="sm"
               onClick={toggleSurvivalMode}
+              className="hidden md:flex"
             >
               {profile?.survival_mode ? (
                 <>
@@ -206,84 +225,129 @@ const Dashboard = () => {
                 </>
               )}
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
+            <Button
+              variant={profile?.survival_mode ? "destructive" : "outline"}
+              size="icon"
+              onClick={toggleSurvivalMode}
+              className="md:hidden"
+            >
+              {profile?.survival_mode ? (
+                <ShieldOff className="w-4 h-4" />
+              ) : (
+                <Shield className="w-4 h-4" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        <section>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="bg-card p-4 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Saldo Total</p>
-              <p className="text-3xl font-bold text-primary">R$ {balance.toFixed(2)}</p>
-            </div>
-            <div className="bg-card p-4 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Contas Pendentes</p>
-              <p className="text-3xl font-bold text-warning">R$ {getTotalUnpaidBills().toFixed(2)}</p>
-            </div>
-            <div className="bg-card p-4 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Disponível</p>
-              <p className="text-3xl font-bold text-success">R$ {(balance - getTotalUnpaidBills()).toFixed(2)}</p>
-            </div>
+      <main className="container mx-auto px-4 py-6 space-y-8">
+        {/* Summary Cards */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+          <div className="bg-card p-3 md:p-4 rounded-xl border shadow-sm">
+            <p className="text-[10px] md:text-sm text-muted-foreground font-medium truncate">Receitas</p>
+            <p className="text-base md:text-2xl font-bold text-green-500 truncate">R$ {totalIncome.toFixed(2)}</p>
           </div>
-          <SurvivalBadge dailyBudget={dailyBudget} daysUntilPayment={daysUntilPayment} />
+          <div className="bg-card p-3 md:p-4 rounded-xl border shadow-sm">
+            <p className="text-[10px] md:text-sm text-muted-foreground font-medium truncate">Despesas</p>
+            <p className="text-base md:text-2xl font-bold text-red-500 truncate">R$ {totalExpenses.toFixed(2)}</p>
+          </div>
+          <div className="bg-card p-3 md:p-4 rounded-xl border shadow-sm">
+            <p className="text-[10px] md:text-sm text-muted-foreground font-medium truncate">Saldo Atual</p>
+            <p className="text-base md:text-2xl font-bold text-primary truncate">R$ {balance.toFixed(2)}</p>
+          </div>
+          <div className="bg-card p-3 md:p-4 rounded-xl border shadow-sm">
+            <p className="text-[10px] md:text-sm text-muted-foreground font-medium truncate">Disponível</p>
+            <p className="text-base md:text-2xl font-bold text-success truncate">R$ {(balance - getTotalUnpaidBills()).toFixed(2)}</p>
+          </div>
         </section>
 
+        {/* Quick Actions */}
         <section>
-          <h2 className="text-xl font-semibold mb-4">Lançamentos</h2>
+          <h2 className="text-lg font-semibold mb-3 md:hidden">Ações Rápidas</h2>
           <div className="flex gap-3">
             <TransactionDialog type="gain" onSuccess={() => loadData(user!.id)} />
             <TransactionDialog type="spend" onSuccess={() => loadData(user!.id)} />
           </div>
         </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Contas dos Próximos 7 Dias</h2>
-            <BillDialog onSuccess={() => loadData(user!.id)} />
-          </div>
-          <div className="space-y-3">
-            {upcomingBills.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Nenhuma conta nos próximos 7 dias
-              </p>
-            ) : (
-              upcomingBills.map((bill) => (
-                <BillCard
-                  key={bill.id}
-                  {...bill}
-                  dueDay={bill.due_day}
-                  onUpdate={() => loadData(user!.id)}
-                />
-              ))
-            )}
-          </div>
-        </section>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Charts & Bills */}
+          <div className="lg:col-span-2 space-y-8">
+            <section>
+              <h2 className="text-xl font-semibold mb-4">Análise de Gastos</h2>
+              <SpendingChart transactions={transactions} />
+            </section>
 
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Meus Cofrinhos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {piggies.map((piggy) => (
-              <PiggyCard
-                key={piggy.id}
-                {...piggy}
-                onUpdate={() => loadData(user!.id)}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Contas Próximas</h2>
+                <BillDialog onSuccess={() => loadData(user!.id)} />
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                 <div className="bg-card p-4 rounded-xl border shadow-sm flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Pendente (Mês)</p>
+                      <p className="text-2xl font-bold text-warning">R$ {getTotalUnpaidBills().toFixed(2)}</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="space-y-3">
+                {upcomingBills.length === 0 ? (
+                  <div className="text-center py-8 bg-card rounded-xl border border-dashed">
+                    <p className="text-muted-foreground">Nenhuma conta urgente para os próximos 7 dias</p>
+                  </div>
+                ) : (
+                  upcomingBills.map((bill) => (
+                    <BillCard
+                      key={bill.id}
+                      {...bill}
+                      dueDay={bill.due_day}
+                      onUpdate={() => loadData(user!.id)}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column: Piggies & Mentor */}
+          <div className="space-y-8">
+             <section>
+              <SurvivalBadge dailyBudget={dailyBudget} daysUntilPayment={daysUntilPayment} />
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Meus Cofrinhos</h2>
+                <PiggyDialog onSuccess={() => loadData(user!.id)} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                {piggies.map((piggy) => (
+                  <PiggyCard
+                    key={piggy.id}
+                    {...piggy}
+                    onUpdate={() => loadData(user!.id)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-4">Conselho do Mentor</h2>
+              <MentorCard
+                message={MENTOR_MESSAGES[0].message}
+                author={MENTOR_MESSAGES[0].author}
               />
-            ))}
+            </section>
           </div>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Conselho do Mentor</h2>
-          <MentorCard
-            message={MENTOR_MESSAGES[0].message}
-            author={MENTOR_MESSAGES[0].author}
-          />
-        </section>
+        </div>
       </main>
     </div>
   );

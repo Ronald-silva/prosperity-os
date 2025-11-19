@@ -38,8 +38,39 @@ export const TransactionDialog = ({ type, onSuccess }: TransactionDialogProps) =
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [essential, setEssential] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("transactions")
+        .select("category")
+        .eq("user_id", user.id)
+        .eq("type", type);
+
+      if (data) {
+        const uniqueCategories = Array.from(new Set(data.map(t => t.category)));
+        const defaultCategories = type === "spend" ? SPEND_CATEGORIES : GAIN_CATEGORIES;
+        const allCategories = Array.from(new Set([...defaultCategories, ...uniqueCategories]));
+        setAvailableCategories(allCategories);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) {
+      fetchCategories();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,12 +80,14 @@ export const TransactionDialog = ({ type, onSuccess }: TransactionDialogProps) =
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
+      const finalCategory = category === "custom" ? customCategory : category;
+
       const { error } = await supabase.from("transactions").insert({
         user_id: user.id,
         type,
         value: parseFloat(value),
         description,
-        category,
+        category: finalCategory,
         essential: type === "spend" ? essential : false,
         date: new Date().toISOString().split('T')[0],
       });
@@ -66,6 +99,7 @@ export const TransactionDialog = ({ type, onSuccess }: TransactionDialogProps) =
       setValue("");
       setDescription("");
       setCategory("");
+      setCustomCategory("");
       setEssential(false);
       onSuccess();
     } catch (error: any) {
@@ -75,10 +109,12 @@ export const TransactionDialog = ({ type, onSuccess }: TransactionDialogProps) =
     }
   };
 
-  const categories = type === "spend" ? SPEND_CATEGORIES : GAIN_CATEGORIES;
+  const categories = availableCategories.length > 0 
+    ? availableCategories 
+    : (type === "spend" ? SPEND_CATEGORIES : GAIN_CATEGORIES);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           className={`flex-1 ${
@@ -90,17 +126,17 @@ export const TransactionDialog = ({ type, onSuccess }: TransactionDialogProps) =
           {type === "gain" ? (
             <>
               <TrendingUp className="w-4 h-4 mr-2" />
-              Ganhei Dinheiro
+              Ganhos
             </>
           ) : (
             <>
               <TrendingDown className="w-4 h-4 mr-2" />
-              Gastei Dinheiro
+              Gastos
             </>
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
             {type === "gain" ? "Registrar Ganho" : "Registrar Gasto"}
@@ -131,8 +167,20 @@ export const TransactionDialog = ({ type, onSuccess }: TransactionDialogProps) =
                     {cat}
                   </SelectItem>
                 ))}
+                <SelectItem value="custom" className="font-semibold text-primary">
+                  + Nova Categoria...
+                </SelectItem>
               </SelectContent>
             </Select>
+            {category === "custom" && (
+              <Input
+                placeholder="Digite o nome da nova categoria"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                required
+                className="mt-2"
+              />
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
