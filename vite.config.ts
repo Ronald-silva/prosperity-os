@@ -16,5 +16,15 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "ui-vendor": ["@radix-ui/react-dialog", "@radix-ui/react-slot", "lucide-react", "sonner", "vaul", "date-fns"],
+          "charts-vendor": ["recharts"],
+          "supabase-vendor": ["@supabase/supabase-js"],
+        },
+      },
+    },
   },
 }));
