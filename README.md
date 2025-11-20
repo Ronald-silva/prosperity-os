@@ -1,59 +1,72 @@
-# Prosperity OS - Seu Mentor Financeiro Pessoal
+# Prosperity OS
 
-## Project info
+**Seu Mentor Financeiro Pessoal**
 
-**URL**: [Insert Project URL Here]
+O **Prosperity OS** é uma aplicação financeira moderna e intuitiva projetada para ajudar você a assumir o controle da sua vida financeira. Com uma interface elegante e recursos poderosos, ele vai além de uma simples planilha, atuando como um verdadeiro sistema operacional para sua prosperidade.
 
-## How can I edit this code?
+## 🚀 Funcionalidades
 
-There are several ways of editing your application.
+- **Dashboard Intuitivo**: Uma visão geral completa das suas finanças com gráficos interativos e métricas em tempo real.
+- **Gestão de Transações**: Registre seus ganhos e gastos de forma rápida.
+- **Categorias Personalizadas**: Crie e gerencie suas próprias categorias para organizar suas transações do seu jeito.
+- **Cofrinhos (Metas)**: Defina metas de economia, acompanhe seu progresso visualmente e realize seus sonhos.
+- **Survival Mode**: Um indicador visual exclusivo (Survival Badge) que monitora sua saúde financeira baseada no seu "runway" (tempo de sobrevivência com o saldo atual).
+- **Design Responsivo**: Acesse suas finanças de qualquer lugar, seja no computador ou no celular, com uma interface otimizada.
+- **Autenticação Segura**: Seus dados protegidos com sistema de login e registro robusto.
 
-**Use your preferred IDE**
+## 🛠️ Tecnologias Utilizadas
 
-If you want to work locally using your own IDE, you can clone this repo and push changes.
+Este projeto foi construído com as tecnologias mais modernas do ecossistema web:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **[Vite](https://vitejs.dev/)**: Build tool ultra-rápida.
+- **[React](https://reactjs.org/)**: Biblioteca para construção de interfaces.
+- **[TypeScript](https://www.typescriptlang.org/)**: JavaScript com superpoderes (tipagem estática).
+- **[Tailwind CSS](https://tailwindcss.com/)**: Framework de estilização utility-first.
+- **[Shadcn UI](https://ui.shadcn.com/)**: Componentes de interface reutilizáveis e acessíveis.
+- **[Supabase](https://supabase.com/)**: Backend-as-a-Service para banco de dados e autenticação.
+- **[Recharts](https://recharts.org/)**: Biblioteca de gráficos composable para React.
 
-Follow these steps:
+## 📦 Como Rodar o Projeto
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Siga os passos abaixo para executar o projeto localmente:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Pré-requisitos
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Node.js instalado (versão 18 ou superior recomendada).
+- Gerenciador de pacotes (npm, yarn, pnpm ou bun).
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Instalação
 
-**Edit a file directly in GitHub**
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/Ronald-silva/prosperity-os.git
+    cd prosperity-os
+    ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
 
-**Use GitHub Codespaces**
+3.  **Configure as Variáveis de Ambiente:**
+    Crie um arquivo `.env` na raiz do projeto e adicione suas credenciais do Supabase:
+    ```env
+    VITE_SUPABASE_URL=sua_url_do_supabase
+    VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+    ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+4.  **Inicie o servidor de desenvolvimento:**
+    ```bash
+    npm run dev
+    ```
 
-## What technologies are used for this project?
+5.  **Acesse a aplicação:**
+    Abra seu navegador em `http://localhost:8080` (ou a porta indicada no terminal).
 
-This project is built with:
+## 🤝 Contribuição
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
 
-## Credits
+## 📄 Licença
 
-By Ronald Digital
+Este projeto é desenvolvido por **Ronald Digital**.
